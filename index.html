@@ -1032,6 +1032,22 @@ function tlGetCurrentWeek(){
     const weekInMonth = Math.min(Math.ceil(day / 7), 4);
     return Math.min(month * 4 + weekInMonth, TL_TOTAL_WEEKS);
 }
+/* 현재 날짜의 정확한 타임라인 위치(%)를 계산 — 월당 4주(총 48주) 기준으로 일(day)까지 반영 */
+function tlGetCurrentPercent(){
+    const now = new Date();
+    const year = now.getFullYear();
+    if(year < TL_YEAR) return 0;
+    if(year > TL_YEAR) return 100;
+    const month = now.getMonth(); // 0-based
+    const day   = now.getDate();  // 1-31
+    // 각 월의 실제 일수
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    // 해당 월에서의 진행 비율 (0~1)
+    const monthProgress = (day - 1) / daysInMonth;
+    // 총 48주(12개월 × 4주)에서의 위치 (주 단위 소수점)
+    const exactWeek = month * 4 + monthProgress * 4;
+    return Math.min((exactWeek / TL_TOTAL_WEEKS) * 100, 100);
+}
 /* 항목의 전체 시작/끝 주 (segments 있는 경우 포함) */
 function tlItemSw(item){ return item.segments ? Math.min(...item.segments.map(s=>s.sw)) : item.sw; }
 function tlItemEw(item){ return item.segments ? Math.max(...item.segments.map(s=>s.ew)) : item.ew; }
@@ -1084,7 +1100,7 @@ function tlRenderHeader(){
 function tlRenderTimeline(){
     const cont=document.getElementById('tlTimelineContent');
     cont.innerHTML='';
-    const cw=tlGetCurrentWeek(), cp=((cw-1)/TL_TOTAL_WEEKS)*100;
+    const cw=tlGetCurrentWeek(), cp=tlGetCurrentPercent();
     let isFirst=true, comp=0, inProg=0, upc=0;
 
     tlGroups.forEach(group=>{
